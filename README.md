@@ -1,5 +1,5 @@
 # gae-pytorch
-Graph Auto Encoder in PyTorch
+Graph Auto-Encoder in PyTorch
 
 This is a PyTorch implementation of the Variational Graph Auto-Encoder model described in the paper:
  
