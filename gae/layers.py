@@ -1,7 +1,4 @@
-import math
-
 import torch
-
 from torch.nn.parameter import Parameter
 from torch.nn.modules.module import Module
 import torch.nn.functional as F
@@ -22,7 +19,6 @@ class GraphConvolution(Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        # self.weight.data.xavier_uniform_()
         torch.nn.init.xavier_uniform_(self.weight)
 
     def forward(self, input, adj):

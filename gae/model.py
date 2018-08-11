@@ -34,7 +34,7 @@ class GCNModelVAE(nn.Module):
 class InnerProductDecoder(nn.Module):
     """Decoder for using inner product for prediction."""
 
-    def __init__(self, dropout, act=nn.Sigmoid()):
+    def __init__(self, dropout, act=torch.sigmoid):
         super(InnerProductDecoder, self).__init__()
         self.dropout = dropout
         self.sigmoid = act

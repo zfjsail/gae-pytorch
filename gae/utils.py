@@ -3,10 +3,7 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 import networkx as nx
-from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score
-import matplotlib.pyplot as plt
-import codecs
-import io
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 
 def load_data(dataset):
@@ -14,6 +11,10 @@ def load_data(dataset):
     names = ['x', 'tx', 'allx', 'graph']
     objects = []
     for i in range(len(names)):
+        '''
+        fix Pickle incompatibility of numpy arrays between Python 2 and 3
+        https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
+        '''
         with open("data/ind.{}.{}".format(dataset, names[i]), 'rb') as rf:
             u = pkl._Unpickler(rf)
             u.encoding = 'latin1'

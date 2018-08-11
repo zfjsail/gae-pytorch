@@ -2,15 +2,13 @@ import torch
 import torch.nn.functional as F
 import torch.nn.modules.loss
 
-import numpy as np
-
 
 def weighted_binary_cross_entropy(output, target, pos_weight):
     # eps = 1e-8  # 1 - eps -> big eats small
     # output = torch.clamp(output, min=eps, max=1-eps)
     if pos_weight is not None:
-        loss = (target * F.sigmoid(output).log()) * pos_weight + \
-               ((1 - target) * F.sigmoid(1 - output).log())
+        loss = (target * torch.sigmoid(output).log()) * pos_weight + \
+               ((1 - target) * torch.sigmoid(1 - output).log())
     else:
         loss = target * torch.log(output) + (1 - target) * torch.log(1 - output)
     loss = torch.neg(torch.mean(loss))

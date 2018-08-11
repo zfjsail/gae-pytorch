@@ -1,6 +1,5 @@
 from __future__ import division
 from __future__ import print_function
-from collections import defaultdict
 
 import argparse
 import time
@@ -9,7 +8,6 @@ import numpy as np
 import scipy.sparse as sp
 
 import torch
-from torch.autograd import Variable
 from torch import optim
 
 from gae.model import GCNModelVAE
@@ -17,9 +15,7 @@ from gae.optimizer import loss_function
 from gae.utils import load_data, mask_test_edges, preprocess_graph, get_roc_score
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--tensorboard-log', type=str, default='', help="name of this run")
-parser.add_argument('--model', type=str, default='gcn', help="models used")
-parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
+parser.add_argument('--model', type=str, default='gcn_vae', help="models used")
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=200, help='Number of epochs to train.')
 parser.add_argument('--hidden1', type=int, default=32, help='Number of units in hidden layer 1.')
