@@ -1,8 +1,9 @@
 import pickle as pkl
+
+import networkx as nx
 import numpy as np
 import scipy.sparse as sp
 import torch
-import networkx as nx
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 
@@ -163,7 +164,6 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
 
 
 def get_roc_score(emb, adj_orig, edges_pos, edges_neg):
-
     def sigmoid(x):
         return 1 / (1 + np.exp(-x))
 

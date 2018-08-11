@@ -1,7 +1,7 @@
 import torch
-from torch.nn.parameter import Parameter
-from torch.nn.modules.module import Module
 import torch.nn.functional as F
+from torch.nn.modules.module import Module
+from torch.nn.parameter import Parameter
 
 
 class GraphConvolution(Module):
