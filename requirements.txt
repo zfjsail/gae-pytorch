@@ -1,5 +1,5 @@
 scipy==1.0.0
-numpy==1.14.0
+numpy==1.22.0
 torch==0.4.1
 networkx==2.1
 scikit_learn==0.19.2
