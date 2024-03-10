@@ -70,18 +70,29 @@ class GAE_CLASSIFICATION(nn.Module):
         out = self.fc_out(z)
         return out, mu, logvar
 class GAE_REGRESSION(nn.Module):
-    def __init__(self, input_feat_dim, hidden_dim1, hidden_dim2, dropout):
+    def __init__(self, input_feat_dim, hidden_dim1, hidden_dim2, num_classes, dropout):
         super(GAE_REGRESSION, self).__init__()
         self.gc1 = GraphConvolution(input_feat_dim, hidden_dim1, dropout, act=F.relu)
         self.gc2 = GraphConvolution(hidden_dim1, hidden_dim2, dropout, act=lambda x: x)
         self.gc3 = GraphConvolution(hidden_dim1, hidden_dim2, dropout, act=lambda x: x)
-        self.fc_out = nn.Linear(hidden_dim2, 1)
+        self.fc = nn.Linear(hidden_dim2, num_classes)  # Linear layer for regression output
 
     def encode(self, x, adj):
         hidden1 = self.gc1(x, adj)
         return self.gc2(hidden1, adj), self.gc3(hidden1, adj)
 
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = torch.exp(logvar)
+            eps = torch.randn_like(std)
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
+
     def forward(self, x, adj):
-        mu, _ = self.encode(x, adj)
-        out = self.fc_out(mu)
-        return out, mu, _
+        h1, h2 = self.encode(x, adj)
+        h = h2.mean(dim=0)  # You can use pooling or other aggregation methods
+        regression_output = self.fc(h)
+        # combined_h = torch.cat((h1, h2), dim=1)  # 或者使用 torch.cat((h1, h2), dim=-1) 进行拼接
+        # regression_output = self.fc(combined_h)
+        return regression_output, h1, h2

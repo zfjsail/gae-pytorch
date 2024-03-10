@@ -79,7 +79,6 @@ def change_to_matrix(adj):
     return adj
 def gae_for(args):
     print("Using {} dataset".format("movielens-classification"))
-    # adj, features = load_data(args.dataset_str)
     data, adj, features, labels, idx_train, idx_val, idx_test = load_data('movielens-classification')
     n_nodes, feat_dim = features.shape
     # 获取邻接矩阵的稀疏表示
@@ -90,25 +89,14 @@ def gae_for(args):
     adj_orig = adj_orig - sp.dia_matrix((adj_orig.diagonal()[np.newaxis, :], [0]), shape=adj_orig.shape)
     adj_orig.eliminate_zeros()
 
-    adj_train, train_edges, val_edges, val_edges_false, test_edges, test_edges_false = mask_test_edges(adj)
-    adj = adj_train
-
     # Some preprocessing
     adj_norm = preprocess_graph(adj)
-    adj_label = adj_train + sp.eye(adj_train.shape[0])
-    # adj_label = sparse_to_tuple(adj_label)
-    adj_label = torch.FloatTensor(adj_label.toarray())
 
-    pos_weight = float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()
-    norm = adj.shape[0] * adj.shape[0] / float((adj.shape[0] * adj.shape[0] - adj.sum()) * 2)
-
-    # model = GCNModelVAE(feat_dim, args.hidden1, args.hidden2, args.dropout)
     num_classes = labels.shape[1]
     model = GAE_CLASSIFICATION(feat_dim, args.hidden1, args.hidden2, num_classes, args.dropout)
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     # optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-    hidden_emb = None
     loss_function = nn.BCEWithLogitsLoss()
     for epoch in range(args.epochs):
         t = time.time()
@@ -120,13 +108,12 @@ def gae_for(args):
         cur_loss = loss.item()
         optimizer.step()
 
-        hidden_emb = mu.data.numpy()
-        roc_curr, ap_curr = get_roc_score(hidden_emb, adj_orig, val_edges, val_edges_false)
+        # hidden_emb = mu.data.numpy()
+        # roc_curr, ap_curr = get_roc_score(hidden_emb, adj_orig, val_edges, val_edges_false)
         pred_train = np.where(recovered[idx_val].detach().numpy() > -1.0, 1, 0)
         f1_micro_train = f1_score(labels[idx_val].detach().numpy(), pred_train, average="micro")
         f1_macro_train = f1_score(labels[idx_val].detach().numpy(), pred_train, average="macro")
         print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(cur_loss),
-              "val_ap=", "{:.5f}".format(ap_curr),
               'f1_val_micro: {:.4f}'.format(f1_micro_train),
               'f1_val_macro: {:.4f}'.format(f1_macro_train),
               "time=", "{:.5f}".format(time.time() - t)
@@ -137,7 +124,7 @@ def gae_for(args):
     # test
     model.eval()
     recovered, mu, logvar = model(features, adj_norm)
-    hidden_emb = mu.data.numpy()
+    # hidden_emb = mu.data.numpy()
     loss_test = loss_function(recovered[idx_test], labels[idx_test])
     # 计算测试集的F1分数
     pred_test = np.where(recovered[idx_test].detach().numpy() > -1.0, 1, 0)
