@@ -1,7 +1,7 @@
 # Naive GAE for classification task in rel-movielens1M
 # Paper: T. N. Kipf, M. Welling, Variational Graph Auto-Encoders ArXiv:1611.07308
-# Test MSE Loss: 12.9224
-# Runtime: 81.4741199016571
+# Test MSE Loss: 12.9223
+# Runtime: 44.12
 # Cost: N/A
 # Description: Simply apply GAE to movielens. Graph was obtained by sampling from foreign keys. Features were llm embeddings from table data to vectors.
 
@@ -27,10 +27,10 @@ time_start = time.time()
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default='gcn_vae', help="models used")
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=200, help='Number of epochs to train.')
+parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train.')
 parser.add_argument('--hidden1', type=int, default=8, help='Number of units in hidden layer 1.')
-parser.add_argument('--hidden2', type=int, default=8, help='Number of units in hidden layer 2.')
-parser.add_argument('--lr', type=float, default=1e-3, help='Initial learning rate.')
+parser.add_argument('--hidden2', type=int, default=4, help='Number of units in hidden layer 2.')
+parser.add_argument('--lr', type=float, default=1e-2, help='Initial learning rate.')
 parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--weight_decay', type=float, default=1e-5, help='Weight decay (L2 loss on parameters).')
 
@@ -84,6 +84,8 @@ def gae_for(args):
     num_classes = labels.shape[0]
 
     # build the GAE_REGRESSION model and optimizer
+    # print("build model")
+    # model = GAE_REGRESSION(feat_dim, args.hidden1, args.hidden2, args.dropout)
     model = GAE_REGRESSION(feat_dim, args.hidden1, args.hidden2, num_classes, args.dropout)
     # optimizer = optim.Adam(model.parameters(), lr=args.lr)
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -91,10 +93,12 @@ def gae_for(args):
 
     # training loop
     for epoch in range(args.epochs):
+        # print(epoch)
         t = time.time()
         model.train()
         optimizer.zero_grad()
         recovered, mu, logvar = model(features, adj_norm)
+        # recovered = model(features, adj_norm)
         loss = loss_function(recovered[idx_train], labels[idx_train])
         loss.backward()
         # cur_loss = loss.item()
@@ -112,6 +116,7 @@ def gae_for(args):
     # test the model
     model.eval()
     recovered, mu, logvar = model(features, adj_norm)
+    # recovered = model(features, adj_norm)
     loss_test = loss_function(recovered[idx_test], labels[idx_test])
 
     print("Test set results:",
