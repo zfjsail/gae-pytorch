@@ -1,7 +1,7 @@
 # Naive GAE for classification task in rel-movielens1M
 # Paper: T. N. Kipf, M. Welling, Variational Graph Auto-Encoders ArXiv:1611.07308
-# Test f1_score micro: 0.3928, macro: 0.0728
-# Runtime: 29.3169
+# Test f1_score micro: 0.3933, macro: 0.0762
+# Runtime: 19.89
 # Cost: N/A
 # Description: Simply apply GAE to movielens. Movies are linked iff a certain number of users rate them samely. Features were llm embeddings from table data to vectors.
 
@@ -9,15 +9,14 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import scipy.sparse as sp
 from torch import optim
 
 from model import GAE_CLASSIFICATION
 from sklearn.metrics import f1_score
-from utils import load_data, preprocess_graph
 import sys
 sys.path.append("../../../../rllm/dataloader")
 
@@ -28,16 +27,37 @@ import networkx as nx
 time_start = time.time()
 # Define command-line arguments using argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, default='gcn_vae', help="models used")
-parser.add_argument('--seed', type=int, default=42, help='Random seed.')
+parser.add_argument('--seed', type=int, default=50, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=200, help='Number of epochs to train.')
 parser.add_argument('--hidden1', type=int, default=32, help='Number of units in hidden layer 1.')
 parser.add_argument('--hidden2', type=int, default=16, help='Number of units in hidden layer 2.')
-parser.add_argument('--lr', type=float, default=0.005, help='Initial learning rate.')
+parser.add_argument('--lr', type=float, default=0.002, help='Initial learning rate.')
 parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 
 args = parser.parse_args()
+
+def sparse_mx_to_torch_sparse_tensor(sparse_mx):
+    """Convert a scipy sparse matrix to a torch sparse tensor."""
+    sparse_mx = sparse_mx.tocoo().astype(np.float32)
+    indices = torch.from_numpy(
+        np.vstack((sparse_mx.row, sparse_mx.col)).astype(np.int64))
+    values = torch.from_numpy(sparse_mx.data)
+    shape = torch.Size(sparse_mx.shape)
+    return torch.sparse_coo_tensor(indices, values, shape)
+
+
+def preprocess_graph(adj):
+    """Preprocess the adjacency matrix for graph-based tasks."""
+    adj = sp.coo_matrix(adj)
+    adj_ = adj + sp.eye(adj.shape[0])
+    rowsum = np.array(adj_.sum(1))
+    degree_mat_inv_sqrt = sp.diags(np.power(rowsum, -0.5).flatten())
+    adj_normalized = adj_.dot(degree_mat_inv_sqrt).transpose().dot(degree_mat_inv_sqrt).tocoo()
+    # return sparse_to_tuple(adj_normalized)
+    return sparse_mx_to_torch_sparse_tensor(adj_normalized)
+
+
 def adj_matrix_to_list(adj_matrix):
     """
     This function converts adjacency matrices to adjacency lists
@@ -64,6 +84,8 @@ def change_to_matrix(adj):
     graph.add_edges_from(edges)
     adj = nx.adjacency_matrix(graph)
     return adj
+
+
 def gae_for(args):
     print("Using {} dataset".format("movielens-classification"))
     # load movielens-classification dataset
@@ -127,4 +149,8 @@ def gae_for(args):
 
 
 if __name__ == '__main__':
+    # fix random seed
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
     gae_for(args)
